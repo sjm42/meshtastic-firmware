@@ -22,14 +22,22 @@
 class UdpMulticastHandler final
 {
   public:
-    UdpMulticastHandler() { udpIpAddress = IPAddress(224, 0, 0, 69); }
+    UdpMulticastHandler() {
+        udpIpAddress = IPAddress(239, 0, 0, 69);
+        udpIpAddressDeprecated = IPAddress(224, 0, 0, 69);
+     }
 
     void start()
     {
-        if (udp.listenMulticast(udpIpAddress, UDP_MULTICAST_DEFAUL_PORT, 64)) {
+        if (udp.listenMulticast(udpIpAddress, UDP_MULTICAST_DEFAUL_PORT, 64)
+            && udp.listenMulticast(udpIpAddressDeprecated, UDP_MULTICAST_DEFAUL_PORT, 64)) {
 #if defined(ARCH_NRF52) || defined(ARCH_PORTDUINO)
             LOG_DEBUG("UDP Listening on IP: %u.%u.%u.%u:%u", udpIpAddress[0], udpIpAddress[1], udpIpAddress[2], udpIpAddress[3],
                       UDP_MULTICAST_DEFAUL_PORT);
+            LOG_DEBUG("UDP Listening on IP: %u.%u.%u.%u:%u",
+                udpIpAddressDeprecated[0], udpIpAddressDeprecated[1],
+                udpIpAddressDeprecated[2], udpIpAddressDeprecated[3],
+                UDP_MULTICAST_DEFAUL_PORT);
 #else
             LOG_DEBUG("UDP Listening on IP: %s", WiFi.localIP().toString().c_str());
 #endif
@@ -86,11 +94,13 @@ class UdpMulticastHandler final
         uint8_t buffer[meshtastic_MeshPacket_size];
         size_t encodedLength = pb_encode_to_bytes(buffer, sizeof(buffer), &meshtastic_MeshPacket_msg, mp);
         udp.writeTo(buffer, encodedLength, udpIpAddress, UDP_MULTICAST_DEFAUL_PORT);
+        udp.writeTo(buffer, encodedLength, udpIpAddressDeprecated, UDP_MULTICAST_DEFAUL_PORT);
         return true;
     }
 
   private:
     IPAddress udpIpAddress;
+    IPAddress udpIpAddressDeprecated;
     AsyncUDP udp;
 };
 #endif // HAS_UDP_MULTICAST
